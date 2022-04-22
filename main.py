@@ -15,6 +15,7 @@ class Plaque:
         self.liste_portes : list[Porte, ] = []
         self.contents : list[int, ] = {}
         self.end : bool = False
+        self.set_lifetime(1)
     def __repr__(self):
         return str([x.get_txt(self.contents) for x in self.liste_portes])
     def set(self, liste_portes):
@@ -25,6 +26,10 @@ class Plaque:
         for id, valeur in inputs:
             self.contents[id] = valeur
     def step(self):
+        self.lifetime -= 1
+        if self.lifetime == 0:
+            self.end = True
+            return
         nouveau_contents = {}
         for id, value in self.contents.items():
             nouveau_contents[id] = value
@@ -34,6 +39,14 @@ class Plaque:
         for id, value in nouveau_contents.items():
             self.contents[id] = value
         self.end = self.contents[len(self.contents)-1]
+    def output(self, liste):
+        sortie = ""
+        for id, value in self.contents.items():
+            if id in liste:
+                sortie += f"{id}:{value} "
+        return sortie
+    def set_lifetime(self, lifetime):
+        self.lifetime = lifetime
 
 class Porte:
     def __init__(self, type, input1, input2, output):
@@ -54,18 +67,19 @@ class Porte:
             case Types.NOT:
                 return not input1
             case Types.XOR:
-                return input1 != input2
+                return int(input1 != input2)
             case Types.XNOR:
-                return input1 == input2
+                return int(input1 == input2)
             case Types.NAND:
                 return not (input1 and input2)
             case Types.NOR:
                 return not (input1 or input2)
         
 plaque = Plaque()
-plaque.add_porte(Porte(Types.OR, 0, 1, 2))
-plaque.add_porte(Porte(Types.AND, 1, 2, 3))
-plaque.input([(0, 0), (1, 1), (2, 0), (3, 0)])
+plaque.set_lifetime(10)
+plaque.add_porte(Porte(Types.XOR, 0, 1, 2))
+plaque.add_porte(Porte(Types.AND, 0, 1, 3))
+plaque.input([(0, 1), (1, 1), (2, 0), (3, 0)])
 while not plaque.end:
     plaque.step()
-print(plaque.contents)
+print(plaque.output([2, 3]))
